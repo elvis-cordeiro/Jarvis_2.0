@@ -1,0 +1,1 @@
+ /home/elvis/Área\ de\ trabalho/Projeto\ Jarvis/Jarvis_Pessoal/.dart_tool/flutter_build/94d3856295e626060df439a815a8a232/native_assets.json /home/elvis/Área\ de\ trabalho/Projeto\ Jarvis/Jarvis_Pessoal/build/native_assets/linux/libsqlite3.so:  /home/elvis/Área\ de\ trabalho/Projeto\ Jarvis/Jarvis_Pessoal/.dart_tool/hooks_runner/shared/sqlite3/build/download-13998389/libsqlite3.so

@@ -1,0 +1,10 @@
+name: jarvis_api
+version: 1.0.0
+environment:
+  sdk: ^3.0.0
+
+dependencies:
+  shelf: ^1.4.0
+  shelf_router: ^1.1.0
+  postgres: ^3.3.0
+  dotenv: ^4.0.0

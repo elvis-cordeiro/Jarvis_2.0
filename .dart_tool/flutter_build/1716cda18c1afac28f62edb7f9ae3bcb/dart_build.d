@@ -1,0 +1,1 @@
+ /home/elvis/Área\ de\ trabalho/Projeto\ Jarvis/Jarvis_Pessoal/.dart_tool/flutter_build/1716cda18c1afac28f62edb7f9ae3bcb/dart_build_result.json:  /home/elvis/Área\ de\ trabalho/Projeto\ Jarvis/Jarvis_Pessoal/.dart_tool/package_config.json /home/elvis/Área\ de\ trabalho/Projeto\ Jarvis/Jarvis_Pessoal/pubspec.yaml /opt/flutter/bin/cache/dart-sdk/version

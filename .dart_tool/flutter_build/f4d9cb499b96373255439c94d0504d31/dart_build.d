@@ -1,0 +1,1 @@
+ /home/elvis/Área\ de\ trabalho/Projeto\ Jarvis/Jarvis_Pessoal/.dart_tool/flutter_build/f4d9cb499b96373255439c94d0504d31/dart_build_result.json: 
