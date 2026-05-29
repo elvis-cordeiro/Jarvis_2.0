@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart';
 import '../database/app_database.dart';
 import '../../domain/services/api_service.dart';
 
@@ -28,8 +29,7 @@ class MemoryRepository {
     try {
       await _api.savePermanentMemory(content, category);
     } catch (e) {
-      // Não quebra o app se a API falhar — dados já estão salvos local
-      print('[API] Erro ao sincronizar memória permanente: $e');
+      debugPrint('[API] Erro ao sincronizar memória permanente: $e');
     }
   }
 
@@ -53,7 +53,7 @@ class MemoryRepository {
     try {
       await _api.saveLongTermMemory(content, category: category);
     } catch (e) {
-      print('[API] Erro ao sincronizar memória longo prazo: $e');
+      debugPrint('[API] Erro ao sincronizar memória longo prazo: $e');
     }
   }
 
@@ -74,14 +74,13 @@ class MemoryRepository {
     try {
       await _api.saveTemporaryMemory(content);
     } catch (e) {
-      print('[API] Erro ao sincronizar memória temporária: $e');
+      debugPrint('[API] Erro ao sincronizar memória temporária: $e');
     }
   }
 
   // ====================== BUSCAR ======================
 
   // Busca todas as memórias de longo prazo válidas (permanentes + não expiradas)
-  // Tenta buscar da nuvem primeiro, cai para local se falhar
   Future<List<LongTermMemoryData>> getAllLongTermMemories() async {
     final now = DateTime.now();
     final all = await db.select(db.longTermMemory).get();
@@ -109,4 +108,66 @@ class MemoryRepository {
   Future<List<TemporaryMemoryData>> getActiveTemporaryMemories() async {
     final now = DateTime.now();
     final all = await db.select(db.temporaryMemory).get();
-    return all.where((m)
+    return all.where((m) => m.expiresAt.isAfter(now)).toList();
+  }
+
+  // ====================== CONVERSAS ======================
+
+  // Salva conversa local e na nuvem
+  Future<void> saveConversation({
+    required String userMessage,
+    required String jarvisResponse,
+  }) async {
+    // Salva local (Drift)
+    await db.into(db.conversationHistory).insert(
+      ConversationHistoryCompanion(
+        userMessage: Value(userMessage),
+        jarvisResponse: Value(jarvisResponse),
+      ),
+    );
+
+    // Sincroniza com API (nuvem)
+    try {
+      await _api.saveConversation(userMessage, jarvisResponse);
+    } catch (e) {
+      debugPrint('[API] Erro ao sincronizar conversa: $e');
+    }
+  }
+
+  // Busca histórico local
+  Future<List<ConversationHistoryData>> getConversationHistory() async {
+    return await db.select(db.conversationHistory).get();
+  }
+
+  // ====================== LIMPEZA ======================
+  Future<void> cleanExpiredMemories() async {
+    final now = DateTime.now();
+
+    // Remove temporárias expiradas
+    final allTemp = await db.select(db.temporaryMemory).get();
+    for (final m in allTemp) {
+      if (m.expiresAt.isBefore(now)) {
+        await (db.delete(db.temporaryMemory)
+              ..where((tbl) => tbl.id.equals(m.id)))
+            .go();
+      }
+    }
+
+    // Remove long term expiradas (permanentes nunca são removidas)
+    final allLong = await db.select(db.longTermMemory).get();
+    for (final m in allLong) {
+      if (m.expiresAt != null && m.expiresAt!.isBefore(now)) {
+        await (db.delete(db.longTermMemory)
+              ..where((tbl) => tbl.id.equals(m.id)))
+            .go();
+      }
+    }
+
+    // Limpa expiradas na nuvem também
+    try {
+      await _api.cleanExpiredMemories();
+    } catch (e) {
+      debugPrint('[API] Erro ao limpar memórias expiradas na nuvem: $e');
+    }
+  }
+}

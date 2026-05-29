@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  // Troque pela URL do seu Web Service no Render após o deploy
   static const String _baseUrl = 'https://api-render-bomf.onrender.com';
 
   // ===== MEMÓRIAS =====
@@ -33,6 +32,13 @@ class ApiService {
   Future<Map<String, dynamic>> getAllMemories() async {
     final response = await http.get(Uri.parse('$_baseUrl/memory/all'));
     return jsonDecode(response.body);
+  }
+
+  Future<void> cleanExpiredMemories() async {
+    await http.delete(
+      Uri.parse('$_baseUrl/memory/cleanup'),
+      headers: {'Content-Type': 'application/json'},
+    );
   }
 
   // ===== CONVERSAS =====
