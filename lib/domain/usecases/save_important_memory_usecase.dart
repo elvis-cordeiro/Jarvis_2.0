@@ -1,14 +1,13 @@
 import '../services/importance_detector.dart';
 import '../services/personality_service.dart';
-import '../../data/repositories/memory_repository.dart';
+import '../services/api_service.dart';
 
 class SaveImportantMemoryUseCase {
-  final MemoryRepository memoryRepository;
+  final ApiService _api = ApiService();
   final ImportanceDetector importanceDetector;
   final PersonalityService personalityService;
 
   SaveImportantMemoryUseCase({
-    required this.memoryRepository,
     required this.importanceDetector,
     required this.personalityService,
   });
@@ -29,30 +28,22 @@ class SaveImportantMemoryUseCase {
     final level = _detectMemoryLevel(lower);
     final category = _detectCategory(lower);
 
-    switch (level) {
-      case MemoryLevel.permanent:
-        await memoryRepository.savePermanentMemory(
-          content: userMessage,
-          category: category,
-        );
-        break;
-      case MemoryLevel.longTerm:
-        await memoryRepository.saveLongTermMemory(
-          content: userMessage,
-          category: category,
-        );
-        break;
-      case MemoryLevel.temporary:
-        await memoryRepository.saveTemporaryMemory(
-          content: userMessage,
-        );
-        break;
-    }
+    try {
+      switch (level) {
+        case MemoryLevel.permanent:
+          await _api.savePermanentMemory(userMessage, category);
+          break;
+        case MemoryLevel.longTerm:
+          await _api.saveLongTermMemory(userMessage, category: category);
+          break;
+        case MemoryLevel.temporary:
+          await _api.saveTemporaryMemory(userMessage);
+          break;
+      }
+    } catch (_) {}
   }
 
-  // Detecta qual nível de memória usar
   MemoryLevel _detectMemoryLevel(String lower) {
-    // Nível 1 — Permanente: sobre personalidade, preferências, quem é Elvis
     if (lower.contains('personalidade') ||
         lower.contains('preferência') ||
         lower.contains('prefiro') ||
@@ -66,7 +57,6 @@ class SaveImportantMemoryUseCase {
       return MemoryLevel.permanent;
     }
 
-    // Nível 3 — Temporária: rotina do dia, tarefas passageiras
     if (lower.contains('hoje') ||
         lower.contains('amanhã') ||
         lower.contains('essa semana') ||
@@ -75,7 +65,6 @@ class SaveImportantMemoryUseCase {
       return MemoryLevel.temporary;
     }
 
-    // Nível 2 — Longo prazo: tudo mais importante
     return MemoryLevel.longTerm;
   }
 

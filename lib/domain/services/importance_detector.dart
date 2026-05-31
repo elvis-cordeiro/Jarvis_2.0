@@ -9,7 +9,7 @@ class ImportanceDetector {
 
   /// Detecção simples offline
   bool isImportant(String userMessage, {String jarvisResponse = ''}) {
-    final fullText = (userMessage + " " + jarvisResponse).toLowerCase();
+    final fullText = ("$userMessage $jarvisResponse").toLowerCase();
 
     return highImportanceKeywords.any((word) => fullText.contains(word)) ||
            fullText.contains('vou tentar') ||

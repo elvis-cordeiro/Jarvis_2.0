@@ -1,5 +1,5 @@
 import '../../data/database/app_database.dart';
-import '../../data/repositories/memory_repository.dart';
+import '../../domain/services/api_service.dart';
 import 'importance_detector.dart';
 import 'llm_memory_evaluator.dart';
 
@@ -7,6 +7,7 @@ class PersonalityService {
   final AppDatabase db;
   final ImportanceDetector importanceDetector;
   final LLMMemoryEvaluator llmEvaluator;
+  final ApiService _api = ApiService();
 
   PersonalityService({
     required this.db,
@@ -18,42 +19,48 @@ class PersonalityService {
     final settings = await db.select(db.userSettings).getSingleOrNull();
     final baseName = settings?.jarvisName ?? 'Jarvis';
     final userName = settings?.userName ?? 'Elvis';
-
-    final repo = MemoryRepository(db);
     final now = DateTime.now();
 
-    // Busca todas de uma vez e filtra em Dart puro
-    final allLongTerm = await db.select(db.longTermMemory).get();
+    List<dynamic> permanentMemories = [];
+    List<dynamic> longTermMemories = [];
+    List<dynamic> temporaryMemories = [];
 
-    final permanentMemories = allLongTerm
-        .where((m) => m.expiresAt == null)
-        .toList();
+    try {
+      final cloudMemories = await _api.getAllMemories();
+      final allLongTerm = List<Map<String, dynamic>>.from(cloudMemories['longTerm'] ?? []);
+      final allTemp = List<Map<String, dynamic>>.from(cloudMemories['temporary'] ?? []);
 
-    final longTermMemories = allLongTerm
-        .where((m) => m.expiresAt != null && m.expiresAt!.isAfter(now))
-        .toList();
+      permanentMemories = allLongTerm.where((m) => m['expires_at'] == null).toList();
+      longTermMemories = allLongTerm.where((m) => m['expires_at'] != null).toList();
+      temporaryMemories = allTemp;
 
-    final allTemp = await db.select(db.temporaryMemory).get();
-    final temporaryMemories = allTemp
-        .where((m) => m.expiresAt.isAfter(now))
-        .toList();
+    } catch (e) {
+      // Fallback local se API falhar
+      final allLongTerm = await db.select(db.longTermMemory).get();
+      permanentMemories = allLongTerm.where((m) => m.expiresAt == null).toList();
+      longTermMemories = allLongTerm
+          .where((m) => m.expiresAt != null && m.expiresAt!.isAfter(now))
+          .toList();
+      final allTemp = await db.select(db.temporaryMemory).get();
+      temporaryMemories = allTemp.where((m) => m.expiresAt.isAfter(now)).toList();
+    }
 
-    // Monta os blocos de memória
-    final permanentBlock = permanentMemories.isNotEmpty
-        ? permanentMemories
-            .map((m) => '  - [${m.category}] ${m.content}')
-            .join('\n')
-        : '  - Nenhuma ainda.';
+    String buildBlock(List<dynamic> memories, {bool isTemp = false}) {
+      if (memories.isEmpty) return '  - Nenhuma ainda.';
+      return memories.map((m) {
+        if (isTemp) {
+          final content = m is Map ? m['content'] : m.content;
+          return '  - $content';
+        }
+        final category = m is Map ? m['category'] : m.category;
+        final content = m is Map ? m['content'] : m.content;
+        return '  - [$category] $content';
+      }).join('\n');
+    }
 
-    final longTermBlock = longTermMemories.isNotEmpty
-        ? longTermMemories
-            .map((m) => '  - [${m.category}] ${m.content}')
-            .join('\n')
-        : '  - Nenhuma ainda.';
-
-    final temporaryBlock = temporaryMemories.isNotEmpty
-        ? temporaryMemories.map((m) => '  - ${m.content}').join('\n')
-        : '  - Nenhuma ainda.';
+    final permanentBlock = buildBlock(permanentMemories);
+    final longTermBlock = buildBlock(longTermMemories);
+    final temporaryBlock = buildBlock(temporaryMemories, isTemp: true);
 
     return '''
 Você é $baseName, assistente pessoal de $userName.

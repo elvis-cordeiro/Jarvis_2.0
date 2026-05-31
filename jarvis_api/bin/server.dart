@@ -176,28 +176,17 @@ Future<Response> saveTemporaryMemory(Request req) async {
 Future<Response> getAllMemories(Request req) async {
   final now = DateTime.now().toIso8601String();
   final longTerm = await db.execute(
-    'SELECT id, category, content, source, created_at::text, expires_at::text FROM long_term_memory WHERE expires_at IS NULL OR expires_at > \$1',
+    'SELECT * FROM long_term_memory WHERE expires_at IS NULL OR expires_at > \$1',
     parameters: [now],
   );
   final temporary = await db.execute(
-    'SELECT id, content, created_at::text, expires_at::text FROM temporary_memory WHERE expires_at > \$1',
+    'SELECT * FROM temporary_memory WHERE expires_at > \$1',
     parameters: [now],
   );
-
-  final longTermList = longTerm.map((r) {
-    final map = r.toColumnMap();
-    return map.map((k, v) => MapEntry(k, v?.toString() ?? v));
-  }).toList();
-
-  final tempList = temporary.map((r) {
-    final map = r.toColumnMap();
-    return map.map((k, v) => MapEntry(k, v?.toString() ?? v));
-  }).toList();
-
   return Response.ok(
     jsonEncode({
-      'longTerm': longTermList,
-      'temporary': tempList,
+      'longTerm': longTerm.map((r) => r.toColumnMap()).toList(),
+      'temporary': temporary.map((r) => r.toColumnMap()).toList(),
     }),
     headers: {'Content-Type': 'application/json'},
   );

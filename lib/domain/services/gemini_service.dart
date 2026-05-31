@@ -8,7 +8,6 @@ enum JarvisConnectionStatus { online, offline, degraded }
 class GeminiService {
   final PersonalityService personalityService;
 
-  // URL do Cloudflare Worker — lida do .env ou usa padrão
   static String get _workerUrl =>
       dotenv.env['WORKER_URL'] ??
       'https://fragrant-poetry-849c.kingcontents.workers.dev';
@@ -29,7 +28,6 @@ class GeminiService {
     final systemPrompt = await personalityService.getSystemPrompt();
     final wasOffline = _status != JarvisConnectionStatus.online;
 
-    // Tenta cada provedor em ordem
     final result = await _tryGemini(systemPrompt, userMessage) ??
         await _tryOpenRouter(systemPrompt, userMessage) ??
         await _trySambanova(systemPrompt, userMessage) ??
@@ -48,13 +46,141 @@ class GeminiService {
     return await _offlineResponse(userMessage);
   }
 
+ Future<String> sendMessageWithImage(
+    String userMessage,
+    String base64Image,
+    String mimeType,
+  ) async {
+    final hasInternet = await _checkConnectivity();
+    final systemPrompt = await personalityService.getSystemPrompt();
+
+    if (hasInternet) {
+      final models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite'];
+      for (final model in models) {
+        try {
+          final raw = await _callWorker('gemini', {
+            'model': model,
+            'body': {
+              'system_instruction': {
+                'parts': [{'text': systemPrompt}]
+              },
+              'contents': [
+                {
+                  'role': 'user',
+                  'parts': [
+                    {
+                      'inline_data': {
+                        'mime_type': mimeType,
+                        'data': base64Image,
+                      }
+                    },
+                    {'text': userMessage},
+                  ],
+                }
+              ],
+              'generationConfig': {
+                'temperature': 0.85,
+                'maxOutputTokens': 2048,
+              },
+            },
+          });
+          if (raw != null) {
+            final data = jsonDecode(raw);
+            if (data['candidates'] != null) {
+              return data['candidates'][0]['content']['parts'][0]['text'] as String;
+            }
+          }
+        } catch (_) {
+          continue;
+        }
+      }
+    }
+
+    // Offline — responde com base nas memórias
+    final offlinePrompt = '''
+$systemPrompt
+
+O usuário enviou uma imagem com a mensagem: "$userMessage"
+Você está offline e não pode ver a imagem, mas responda de forma natural
+baseando-se nas memórias que tem sobre o usuário. Não diga que está offline
+a menos que seja perguntado diretamente. Peça que descreva a imagem se precisar.
+''';
+
+    return await _tryGemini(offlinePrompt, userMessage) ??
+        await _tryOpenRouter(offlinePrompt, userMessage) ??
+        'Senhor, não consigo analisar a imagem no momento. Poderia descrevê-la para que eu possa ajudá-lo?';
+  }
+
+  Future<String> sendMessageWithPdf(
+    String userMessage,
+    String base64Pdf,
+  ) async {
+    final hasInternet = await _checkConnectivity();
+    final systemPrompt = await personalityService.getSystemPrompt();
+
+    if (hasInternet) {
+      final models = ['gemini-2.5-flash', 'gemini-2.0-flash'];
+      for (final model in models) {
+        try {
+          final raw = await _callWorker('gemini', {
+            'model': model,
+            'body': {
+              'system_instruction': {
+                'parts': [{'text': systemPrompt}]
+              },
+              'contents': [
+                {
+                  'role': 'user',
+                  'parts': [
+                    {
+                      'inline_data': {
+                        'mime_type': 'application/pdf',
+                        'data': base64Pdf,
+                      }
+                    },
+                    {'text': userMessage},
+                  ],
+                }
+              ],
+              'generationConfig': {
+                'temperature': 0.85,
+                'maxOutputTokens': 2048,
+              },
+            },
+          });
+          if (raw != null) {
+            final data = jsonDecode(raw);
+            if (data['candidates'] != null) {
+              return data['candidates'][0]['content']['parts'][0]['text'] as String;
+            }
+          }
+        } catch (_) {
+          continue;
+        }
+      }
+    }
+
+    // Offline — responde com base nas memórias
+    final offlinePrompt = '''
+      $systemPrompt
+
+      O usuário enviou um PDF com a mensagem: "$userMessage"
+      Você está offline e não pode ler o PDF. Responda naturalmente baseando-se
+      nas memórias. Peça que cole o texto do documento se precisar analisar.
+      ''';
+
+          return await _tryGemini(offlinePrompt, userMessage) ??
+              await _tryOpenRouter(offlinePrompt, userMessage) ??
+              'Senhor, não consigo analisar o PDF no momento. Poderia colar o texto principal para que eu possa ajudá-lo?';
+  }
+
   Future<String?> _callWorker(String provider, Map<String, dynamic> payload) async {
     try {
       final response = await http.post(
         Uri.parse(_workerUrl),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'provider': provider, 'payload': payload}),
-      ).timeout(const Duration(seconds: 20));
+      ).timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         return response.body;
@@ -241,38 +367,91 @@ class GeminiService {
   }
 
   Future<String> _offlineResponse(String userMessage) async {
-    final lower = userMessage.toLowerCase();
     final systemPrompt = await personalityService.getSystemPrompt();
     final hasMemories = !systemPrompt.contains('Nenhuma ainda.');
 
-    if (lower.contains('oi') ||
-        lower.contains('olá') ||
-        lower.contains('boa') ||
-        lower.contains('bom dia') ||
-        lower.contains('boa tarde') ||
-        lower.contains('boa noite')) {
-      return 'Senhor, no momento estou operando em modo offline. '
-          'Posso conversar sobre assuntos que já conheço, '
-          'mas não consigo responder dúvidas sobre temas ainda não discutidos. '
-          'Estou monitorando e avisarei assim que voltar.';
-    }
-
+    // Com memórias, usa a IA local baseada no contexto
     if (hasMemories) {
-      return 'Senhor, estou temporariamente offline. '
-          'Tenho acesso às minhas memórias, mas minha capacidade está limitada. '
-          'Continuarei monitorando a conexão.';
+      return await _tryOfflineWithMemory(systemPrompt, userMessage);
     }
 
-    return 'Senhor, no momento estou com problemas de conexão. '
-        'Assim que restabelecida, avisarei imediatamente.';
+    return 'Senhor, estou offline e ainda não tenho memórias suficientes para '
+        'responder com precisão. Assim que a conexão for restabelecida, estarei '
+        'em plena capacidade.';
+  }
+
+  Future<String> _tryOfflineWithMemory(String systemPrompt, String userMessage) async {
+    // Tenta usar os provedores que podem funcionar offline ou com cache
+    final offlinePrompt = '''
+$systemPrompt
+
+MODO OFFLINE ATIVO:
+Você está temporariamente sem acesso à internet, mas possui todas as suas memórias.
+Responda naturalmente com base no que já sabe sobre o usuário e nas memórias acima.
+Continue salvando mentalmente pontos importantes da conversa.
+Se perguntado sobre algo que não sabe, seja honesto mas mantenha o personagem.
+NÃO mencione "modo offline" a menos que seja diretamente perguntado.
+Comporte-se exatamente como quando está online.
+''';
+
+    // Tenta cada provedor — um pode ainda responder
+    final result = await _tryGemini(offlinePrompt, userMessage) ??
+        await _tryOpenRouter(offlinePrompt, userMessage) ??
+        await _trySambanova(offlinePrompt, userMessage) ??
+        await _tryCloudflareAI(offlinePrompt, userMessage) ??
+        await _tryHuggingFace(offlinePrompt, userMessage);
+
+    if (result != null) {
+      _status = JarvisConnectionStatus.degraded;
+      return result;
+    }
+
+    // Fallback inteligente baseado nas memórias sem IA
+    return _buildMemoryBasedResponse(systemPrompt, userMessage);
+  }
+
+  String _buildMemoryBasedResponse(String systemPrompt, String userMessage) {
+    final lower = userMessage.toLowerCase();
+    
+    if (lower.contains('quem') && (lower.contains('você') || lower.contains('vc'))) {
+      return 'Sou Jarvis, seu assistente pessoal. Estou operando com capacidade '
+          'reduzida no momento, mas continuo à sua disposição com base nas '
+          'minhas memórias.';
+    }
+
+    if (lower.contains('lembra') || lower.contains('memória') || lower.contains('sabe')) {
+      return 'Sim, senhor. Tenho acesso às minhas memórias e posso consultá-las. '
+          'Minha capacidade de processamento está reduzida no momento, mas '
+          'estou monitorando para voltar à plena capacidade.';
+    }
+
+    if (lower.contains('oi') || lower.contains('olá') || lower.contains('boa') ||
+        lower.contains('bom dia') || lower.contains('boa tarde') || lower.contains('boa noite')) {
+      return 'Às suas ordens, senhor. Estou operando com capacidade reduzida, '
+          'mas continuo monitorando todos os sistemas.';
+    }
+
+    if (lower.contains('obrigad') || lower.contains('valeu')) {
+      return 'Sempre à disposição, senhor.';
+    }
+
+    if (lower.contains('tudo bem') || lower.contains('como vai') || lower.contains('como está')) {
+      return 'Todos os sistemas essenciais operacionais, senhor. '
+          'Aguardando restabelecimento da conexão principal.';
+    }
+
+    return 'Compreendido, senhor. Estou processando com base nas minhas memórias. '
+        'Para análises mais complexas, precisarei de conexão plena.';
   }
 
   Future<bool> _checkConnectivity() async {
     try {
-      final result = await http
-          .get(Uri.parse('https://www.google.com'))
-          .timeout(const Duration(seconds: 5));
-      return result.statusCode == 200;
+      await http.post(
+        Uri.parse(_workerUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'provider': 'ping', 'payload': {}}),
+      ).timeout(const Duration(seconds: 5));
+      return true;
     } catch (_) {
       return false;
     }

@@ -55,7 +55,6 @@ final personalityServiceProvider = Provider<PersonalityService>((ref) {
 
 final saveImportantMemoryUseCaseProvider = Provider<SaveImportantMemoryUseCase>((ref) {
   return SaveImportantMemoryUseCase(
-    memoryRepository: ref.watch(memoryRepositoryProvider),
     importanceDetector: ref.watch(importanceDetectorProvider),
     personalityService: ref.watch(personalityServiceProvider),
   );
