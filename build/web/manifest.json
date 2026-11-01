@@ -1,12 +1,12 @@
 {
-    "name": "jarvis_pessoal",
-    "short_name": "jarvis_pessoal",
+    "name": "Jarvis 2.0 — Assistente Pessoal",
+    "short_name": "Jarvis",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
-    "orientation": "portrait-primary",
+    "background_color": "#0B0D13",
+    "theme_color": "#0B0D13",
+    "description": "Assistente Pessoal com IA, Voz e Memória Persistente",
+    "orientation": "any",
     "prefer_related_applications": false,
     "icons": [
         {

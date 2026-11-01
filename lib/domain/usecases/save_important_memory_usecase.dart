@@ -82,21 +82,29 @@ class SaveImportantMemoryUseCase {
     if (lower.contains('rotina') ||
         lower.contains('acord') ||
         lower.contains('horário') ||
-        lower.contains('hoje')) return 'rotina';
+        lower.contains('hoje')) {
+      return 'rotina';
+    }
 
     if (lower.contains('gost') ||
         lower.contains('prefer') ||
         lower.contains('favorit') ||
-        lower.contains('prefiro')) return 'preferencias';
+        lower.contains('prefiro')) {
+      return 'preferencias';
+    }
 
     if (lower.contains('personalidade') ||
         lower.contains('comportamento') ||
         lower.contains('programado') ||
-        lower.contains('você é')) return 'personalidade';
+        lower.contains('você é')) {
+      return 'personalidade';
+    }
 
     if (lower.contains('trabalho') ||
         lower.contains('projeto') ||
-        lower.contains('tarefa')) return 'trabalho';
+        lower.contains('tarefa')) {
+      return 'trabalho';
+    }
 
     return 'general';
   }

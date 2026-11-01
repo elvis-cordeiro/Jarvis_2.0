@@ -45,7 +45,7 @@ Essa arquitetura garante maior disponibilidade e confiabilidade.
 ### Síntese de Voz
 
 - 🎤 ElevenLabs (voz principal)
-- 🔄 Flutter TTS (fallback automático)
+- 🔄 Flutter TTS (fallback automático em pt-BR)
 
 ### Reconhecimento de Fala
 
@@ -58,7 +58,7 @@ Essa arquitetura garante maior disponibilidade e confiabilidade.
 
 | Camada | Tecnologia |
 |----------|------------|
-| Frontend | Flutter Web |
+| Frontend | Flutter Web / Mobile Adaptativo |
 | Backend | Dart + Shelf |
 | Banco de Dados | PostgreSQL |
 | Cache Local | Drift + SQLite |
@@ -66,7 +66,7 @@ Essa arquitetura garante maior disponibilidade e confiabilidade.
 | Hospedagem Web | Cloudflare Pages |
 | Hospedagem API | Render |
 | IA Principal | Google Gemini |
-| Voz | ElevenLabs |
+| Voz | ElevenLabs / Web Speech |
 
 ---
 
@@ -74,14 +74,14 @@ Essa arquitetura garante maior disponibilidade e confiabilidade.
 
 - 💬 Chat inteligente com contexto persistente
 - 🧠 Memória em três níveis
-- ☁️ Banco de dados centralizado na nuvem
-- 🎙️ Entrada por voz
-- 🔊 Respostas em áudio
+- ☁️ Banco de dados centralizado na nuvem (mesmo histórico no PC e Mobile)
+- 🎙️ Entrada por voz com botão e indicador em tempo real
+- 🔊 Respostas em áudio com controle de reprodução
 - 📎 Leitura de imagens
 - 📄 Análise de PDFs
 - 📝 Processamento de documentos de texto
-- 🌐 Funcionamento em qualquer navegador
-- 📡 Sincronização entre dispositivos
+- 🌐 Funcionamento em qualquer navegador (PC e Mobile)
+- 📡 Sincronização automática entre dispositivos
 - ⚡ Sistema de fallback automático entre IAs
 - 🔄 API sempre ativa utilizando Cloudflare Worker
 
@@ -120,11 +120,29 @@ jarvis_api/
 
 ---
 
-# 🌐 Deploy
+# 🌐 Deploy & Execução Web/Mobile
 
 ### API
-
 https://api-render-bomf.onrender.com
+
+### Como Rodar no Navegador (PC & Celular):
+
+```bash
+# 1. Habilitar web no Flutter
+flutter config --enable-web
+
+# 2. Obter dependências
+flutter pub get
+
+# 3. Rodar em modo desenvolvimento no Chrome
+flutter run -d chrome
+
+# 4. Gerar build otimizada para produção (Cloudflare Pages / Vercel / Netlify)
+flutter build web --release
+```
+
+> [!TIP]
+> **Acesso Seguro no Celular (HTTPS):** Para que o microfone funcione nos navegadores móveis (Safari no iOS e Chrome no Android), o acesso deve ser via HTTPS. O deploy no **Cloudflare Pages** fornece certificado SSL/HTTPS gratuitamente.
 
 ---
 
@@ -133,7 +151,7 @@ https://api-render-bomf.onrender.com
 - ✅ Arquitetura Multi-AI
 - ✅ Memória Persistente
 - ✅ Sincronização em Nuvem
-- ✅ Funcionamento entre dispositivos
+- ✅ Funcionamento entre dispositivos (PC e Mobile)
 - ✅ Entrada e saída por voz
 - ✅ Sistema de redundância automática
 - ✅ Cache local inteligente

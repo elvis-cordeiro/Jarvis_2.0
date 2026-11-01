@@ -33,7 +33,7 @@
     },
     {
       "name": "crypto",
-      "rootUri": "file:///C:/Users/Elvis/AppData/Local/Pub/Cache/hosted/pub.dev/crypto-3.0.7",
+      "rootUri": "file:///C:/Users/Elvis/AppData/Local/Pub/Cache/hosted/pub.dev/crypto-3.0.8",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
@@ -57,7 +57,7 @@
     },
     {
       "name": "meta",
-      "rootUri": "file:///C:/Users/Elvis/AppData/Local/Pub/Cache/hosted/pub.dev/meta-1.18.2",
+      "rootUri": "file:///C:/Users/Elvis/AppData/Local/Pub/Cache/hosted/pub.dev/meta-1.19.0",
       "packageUri": "lib/",
       "languageVersion": "3.5"
     },
@@ -69,27 +69,27 @@
     },
     {
       "name": "pool",
-      "rootUri": "file:///C:/Users/Elvis/AppData/Local/Pub/Cache/hosted/pub.dev/pool-1.5.2",
+      "rootUri": "file:///C:/Users/Elvis/AppData/Local/Pub/Cache/hosted/pub.dev/pool-1.5.3",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
     {
       "name": "postgres",
-      "rootUri": "file:///C:/Users/Elvis/AppData/Local/Pub/Cache/hosted/pub.dev/postgres-3.5.11",
+      "rootUri": "file:///C:/Users/Elvis/AppData/Local/Pub/Cache/hosted/pub.dev/postgres-3.5.20",
       "packageUri": "lib/",
       "languageVersion": "3.9"
     },
     {
       "name": "shelf",
-      "rootUri": "file:///C:/Users/Elvis/AppData/Local/Pub/Cache/hosted/pub.dev/shelf-1.4.2",
+      "rootUri": "file:///C:/Users/Elvis/AppData/Local/Pub/Cache/hosted/pub.dev/shelf-1.4.3",
       "packageUri": "lib/",
-      "languageVersion": "3.4"
+      "languageVersion": "3.9"
     },
     {
       "name": "shelf_router",
-      "rootUri": "file:///C:/Users/Elvis/AppData/Local/Pub/Cache/hosted/pub.dev/shelf_router-1.1.4",
+      "rootUri": "file:///C:/Users/Elvis/AppData/Local/Pub/Cache/hosted/pub.dev/shelf_router-1.1.5",
       "packageUri": "lib/",
-      "languageVersion": "2.17"
+      "languageVersion": "3.9"
     },
     {
       "name": "source_span",
@@ -99,7 +99,7 @@
     },
     {
       "name": "stack_trace",
-      "rootUri": "file:///C:/Users/Elvis/AppData/Local/Pub/Cache/hosted/pub.dev/stack_trace-1.12.1",
+      "rootUri": "file:///C:/Users/Elvis/AppData/Local/Pub/Cache/hosted/pub.dev/stack_trace-1.12.2",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
@@ -135,8 +135,8 @@
     }
   ],
   "generator": "pub",
-  "generatorVersion": "3.11.5",
-  "flutterRoot": "file:///C:/Flutter",
-  "flutterVersion": "3.41.9",
+  "generatorVersion": "3.13.7",
+  "flutterRoot": "file:///E:/flutter",
+  "flutterVersion": "3.47.9",
   "pubCache": "file:///C:/Users/Elvis/AppData/Local/Pub/Cache"
 }

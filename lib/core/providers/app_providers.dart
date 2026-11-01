@@ -1,11 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:jarvis_pessoal/domain/services/gemini_service.dart';
 import '../../data/database/app_database.dart';
 import '../../data/repositories/memory_repository.dart';
 import '../../data/repositories/settings_repository.dart';
+import '../../domain/services/api_service.dart';
+import '../../domain/services/gemini_service.dart';
 import '../../domain/services/importance_detector.dart';
 import '../../domain/services/llm_memory_evaluator.dart';
 import '../../domain/services/personality_service.dart';
+import '../../domain/services/voice_service.dart';
 import '../../domain/usecases/save_important_memory_usecase.dart';
 
 // ==================== BANCO DE DADOS ====================
@@ -29,6 +31,15 @@ final memoryRepositoryProvider = Provider<MemoryRepository>((ref) {
 });
 
 // ==================== SERVICES ====================
+
+final apiServiceProvider = Provider<ApiService>((ref) {
+  return ApiService();
+});
+
+final voiceServiceProvider = Provider<VoiceService>((ref) {
+  final service = VoiceService();
+  return service;
+});
 
 final importanceDetectorProvider = Provider<ImportanceDetector>((ref) {
   return ImportanceDetector();
@@ -59,8 +70,6 @@ final saveImportantMemoryUseCaseProvider = Provider<SaveImportantMemoryUseCase>(
     personalityService: ref.watch(personalityServiceProvider),
   );
 });
-
-// ... no final do arquivo
 
 final geminiServiceProvider = Provider<GeminiService>((ref) {
   final personalityService = ref.watch(personalityServiceProvider);
